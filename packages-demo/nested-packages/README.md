@@ -1,6 +1,7 @@
 # Nested Packages Demo
 In diesem Modul entsteht der Command "nested".
 GitBash: cd /c/01arbeit/03udemy/golang/github.com/vkoster/mygo
+         cd /c/01arbeit/03udemy/golang/
 
 Verzeichnisstruktur:
 ````

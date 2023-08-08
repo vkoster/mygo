@@ -1,0 +1,36 @@
+# ==============================================================================
+# Compose-File zum Kompilieren und Installieren von Go-Source unter Linux.
+# Wir befinden uns also ein einer Linux VM.
+# Der Container bekommt meinen GOPATH als Mount. Damit landen alle Depnedencies auch auf meinem
+# lokalen GOPATH und werden zwischen Containern ge-shared.
+# Es entsteht ein ausführbares Programm, kein Docker Container!
+# Das was entsteht, ist ganz normaler Linux Binary Code (den man natürlich in einen Container
+# packen kann). Aber dafür gibt es ja den Multistage-Build (mf_*-Dockerfile).
+#
+# Den folgenden Befehl kann man in die Shell geben, um die Compose-Anweisungen zu testen:
+# docker run -it -v /vagrant/github.com/vkoster/mygo/packages-demo/nested-packages:/gomod -v /go:/go -e -w /gomod golang:latest sh
+# Historie
+# 11.10.2020 erstellt
+# ------------------------------------------------------------------------------
+version: '3.0'
+services:
+  nested:
+    image: golang:latest
+    #environment:
+    # Pfad für die temporären Package-Installationen
+    # ...den sieht der Container durch den Volume Mount (s.u.)
+    # - GOTMPDIR=/go/pkg
+    volumes:
+      # VM: vagrant ist Host (Windows: C:\01arbeit\03udemy\golang\github.com\vkoster\mygo\packages-demo\nested-packages\quote)
+      # Container-Mountpoint: /gomod
+      - /vagrant/github.com/vkoster/mygo/packages-demo/nested-packages:/gomod
+      # VM: go ist Host (Windows) C:\Users\vkoster\go\
+      # der nach /go gemountet wird
+      # Achtung: dafür muss /go in der VM gemountet sein!
+      - /go:/go
+    working_dir: /gomod/
+    # -v: alle kompilierten Packages ausgeben
+    # -a: alle Packages neue bauen
+    # -o: Name für den Output ändern...
+    # -tags netgo: nur für Alpine-Hosts erforderlich
+    command: go build -v -o app_lnx .

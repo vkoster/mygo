@@ -1,0 +1,21 @@
+# ==============================================================================
+# Stage 1 eines Multi-Stage Builds.
+# Aufruf: ./compose.sh build client-stage1
+# Es entsteht das Stage1 Image, das die compilierte App enthält.
+# Container starten: docker run -it --entrypoint="sh" mygo/nested:stg1
+# Damit landet man in dem Container und kann sich ansehen, ob die App
+# korrekt gebaut wurde. Nur dann, kann Stage2 gelingen :-)
+# ------------------------------------------------------------------------------
+
+FROM golang:latest as builder
+WORKDIR /gomod/
+# App mit eigenen Abhängigkeiten in den Container kopieren (mein Code)
+# Kopiert wird das gesamte Verzeichnis mit Inhalt
+COPY ./nested-packages .
+# Jetzt alles bauen:
+# ...der "Command" (die kompilierte App) landet im WORKDIR
+# -v: alle kompilierten Packages ausgeben
+# -a: alle Packages neue bauen
+# -o: Name für den Output ändern...
+RUN go build -tags netgo -v -o app .
+ENTRYPOINT ["./app"]
