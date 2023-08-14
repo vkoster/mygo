@@ -11,4 +11,4 @@ if [ -z "$1" ]; then
   docker compose -h
   exit 1
 fi
-docker compose -p pkg -f compose.yaml $1 $2 $3
+docker compose -p grpc -f compose.yaml $1 $2 $3

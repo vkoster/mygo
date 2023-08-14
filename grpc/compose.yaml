@@ -1,0 +1,54 @@
+# ==============================================================================
+# Hier entsteht ein Docker-Container, der das Executable Go-File enthält.
+# - Stage 1: das Executable wird gebaut
+# - Stage 2: das Executable wird in eine Docker-Image gepackt
+#   Dann wird das Image gestartet
+# Den oauth/client Container interaktiv mit SH aus einem Image heraus starten:
+#           docker run -it --entrypoint sh oauth/client:0.0.1
+# Historie
+# 14.10.2020 Templates-Folder mitkopiert
+#            Image zum debuggen separat starten (s.o.)
+# 10.10.2020 erstellt
+# ------------------------------------------------------------------------------
+version: '3.0'
+services:
+  # installiert das Plugin (Module) und hinterlegt das Binary
+  install_protobuf:
+    image: golang:latest
+    volumes:
+      # VM: go ist Host (Windows) C:\Users\vkoster\go\
+      # der nach /go gemountet wird
+      # Achtung: dafür muss /go in der VM gemountet sein!
+      - /go:/go
+    command: go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
+  # installiert das Plugin (Module) und hinterlegt das Binary
+  install_grpc:
+    image: golang:latest
+    volumes:
+      # VM: go ist Host (Windows) C:\Users\vkoster\go\
+      # der nach /go gemountet wird
+      # Achtung: dafür muss /go in der VM gemountet sein!
+      - /go:/go
+    command: go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+  # baut ein Image, das den protoc Compiler enthält
+  build_protobuf:
+    build:
+      context: .
+      dockerfile: protobuf.df
+    image: grpc/protobuf:0.0.1
+  # protoc aufrufen
+  protobuf:
+    image: grpc/protobuf:0.0.1
+    volumes:
+      - /vagrant/github.com/vkoster/mygo/grpc:/gomod
+      # das Go-Modules Verzeichnis in den Container mounten
+      # Damit hat protoc Zugriff auf die Go-Moudule Binaries
+      - /go:/go
+    working_dir: /gomod/
+    environment:
+      PATH: "$PATH:/go/bin"
+    entrypoint: [protoc, -Igreet/proto, --go_out=., --go_opt=module=github.com/vkoster/mygo/grpc, --go-grpc_out=., --go-grpc_opt=module=github.com/vkoster/mygo/grpc, greet/proto/greet.proto]
+
+
+
+

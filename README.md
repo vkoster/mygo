@@ -4,6 +4,11 @@ Vagrant-Verzeichnis ansteuern
 ````
 cd /c/01arbeit/03udemy/golang
 ````
+mygo-Projekt ansteuern
+````
+cd /c/01arbeit/03udemy/golang/github.com/vkoster/mygo
+````
+
 ## GitBash VM
 mygo Projekt ansteuern
 ````

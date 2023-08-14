@@ -1,0 +1,8 @@
+# ==============================================================================
+# Baue einen Container, der protoc enthält
+# ------------------------------------------------------------------------------
+FROM ubuntu:latest
+RUN apt-get update
+RUN apt-get install -y protobuf-compiler
+VOLUME /go
+ENTRYPOINT ["protoc"]
