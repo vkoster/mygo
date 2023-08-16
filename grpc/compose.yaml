@@ -13,6 +13,7 @@
 version: '3.0'
 services:
   # installiert das Plugin (Module) und hinterlegt das Binary
+  # (den Aufruf braucht man nur einmal)
   install_protobuf:
     image: golang:latest
     volumes:
@@ -36,7 +37,7 @@ services:
       context: .
       dockerfile: protobuf.df
     image: grpc/protobuf:0.0.1
-  # protoc aufrufen
+  # protoc aufrufen um die Codegenerierung durch Protoc zu starten
   protobuf:
     image: grpc/protobuf:0.0.1
     volumes:
@@ -48,7 +49,89 @@ services:
     environment:
       PATH: "$PATH:/go/bin"
     entrypoint: [protoc, -Igreet/proto, --go_out=., --go_opt=module=github.com/vkoster/mygo/grpc, --go-grpc_out=., --go-grpc_opt=module=github.com/vkoster/mygo/grpc, greet/proto/greet.proto]
-
-
-
-
+  # Baut die App als Linux Binary und legt sie als app_lnx ins Verzeichnis des Themas.
+  greetserver_lnx:
+    image: golang:latest
+    volumes:
+      # VM: vagrant ist Host (Windows: C:\01arbeit\03udemy\golang\github.com\vkoster\mygo\packages-demo\nested-packages\quote)
+      # Container-Mountpoint: /gomod
+      - /vagrant/github.com/vkoster/mygo/grpc:/gomod
+      # VM: go ist Host (Windows) C:\Users\vkoster\go\
+      # der nach /go gemountet wird
+      # Achtung: dafür muss /go in der VM gemountet sein!
+      - /go:/go
+    working_dir: /gomod/
+    # -v: alle kompilierten Packages ausgeben
+    # -a: alle Packages neue bauen
+    # -o: Name für den Output ändern...
+    # -tags netgo: nur für Alpine-Hosts erforderlich
+    # wir stehen im Module-Verzeichnis (grpc) (da liegt das mod-file)
+    # - von da aus definieren wir den output (bin/greet/server_lnx)
+    # - von da aus geben wir an, was kompiliert werden soll
+    command: go build -v -o bin/greet/server_lnx ./greet/server
+  # Zum Debuggen: Stage 1 des Multi-Stage Builds.
+  # Dient nur dazu, das Ergebnis des Build-Prozesses zu kontrollieren.
+  # Es entsteht ein Image, basierend auf Golang, in dem sich die gebaute Anwendung befinden sollte.
+  greetserver-stg1:
+    environment:
+      - CGO_ENABLED=0
+    build:
+      context: .
+      dockerfile: greetserver-stg1.df
+    image: mygo/greetserver:stg1
+    ports:
+      - "3020:3020"
+  # Hier wird die App im Multi-Stage Build gebaut.
+  # Ergebnis ist
+  greetserver:
+    environment:
+      - CGO_ENABLED=0
+    build:
+      context: .
+      dockerfile: greetserver-ms.df
+    image: mygo/greetserver:0.0.1
+    ports:
+      - "3020:3020"
+  # Baut die App als Linux Binary und legt sie als app_lnx ins Verzeichnis des Themas.
+  greetclient_lnx:
+    image: golang:latest
+    volumes:
+      # VM: vagrant ist Host (Windows: C:\01arbeit\03udemy\golang\github.com\vkoster\mygo\packages-demo\nested-packages\quote)
+      # Container-Mountpoint: /gomod
+      - /vagrant/github.com/vkoster/mygo/grpc:/gomod
+      # VM: go ist Host (Windows) C:\Users\vkoster\go\
+      # der nach /go gemountet wird
+      # Achtung: dafür muss /go in der VM gemountet sein!
+      - /go:/go
+    working_dir: /gomod/
+    # -v: alle kompilierten Packages ausgeben
+    # -a: alle Packages neue bauen
+    # -o: Name für den Output ändern...
+    # -tags netgo: nur für Alpine-Hosts erforderlich
+    # wir stehen im Module-Verzeichnis (grpc) (da liegt das mod-file)
+    # - von da aus definieren wir den output (bin/greet/server_lnx)
+    # - von da aus geben wir an, was kompiliert werden soll
+    command: go build -v -o bin/greet/client_lnx ./greet/client
+  # Zum Debuggen: Stage 1 des Multi-Stage Builds.
+  # Dient nur dazu, das Ergebnis des Build-Prozesses zu kontrollieren.
+  # Es entsteht ein Image, basierend auf Golang, in dem sich die gebaute Anwendung befinden sollte.
+  greetclient-stg1:
+    environment:
+      - CGO_ENABLED=0
+    build:
+      context: .
+      dockerfile: greetclient-stg1.df
+    image: mygo/greetclient:stg1
+    ports:
+      - "3020:3020"
+  # Hier wird die App im Multi-Stage Build gebaut.
+  # Ergebnis ist
+  greetclient:
+    environment:
+      - CGO_ENABLED=0
+    build:
+      context: .
+      dockerfile: greetclient-ms.df
+    image: mygo/greetclient:0.0.1
+    ports:
+      - "3020:3020"

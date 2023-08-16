@@ -1,0 +1,31 @@
+# ==============================================================================
+# Stage 1 eines Multi-Stage Builds des "clients"
+# Aufruf: ./compose.sh build client-stage1
+# Es entsteht das Stage1 Image, das den compilierten client enthalten
+# sollte.
+# Container starten: docker run -it --entrypoint="sh" oauth/client:stage1
+# Damit landet man in dem Container und kann sich ansehen, ob der Service
+# korrekt gebaut wurde. Nur dann, kann Stage2 gelingen :-)
+# ------------------------------------------------------------------------------
+
+FROM golang:latest as builder
+# ...das ist grpc
+WORKDIR /gomod/
+# App mit eigenen Abhängigkeiten in den Container kopieren (mein Code)
+# Kopiert wird das gesamte Verzeichnis unter grpc. Alles, was nicht benötigt
+# wird, muss das dockerignore File ausfiltern.
+COPY .  .
+# Jetzt alles bauen:
+# ...der "Command" (die kompilierte App) landet im WORKDIR
+# -v: alle kompilierten Packages ausgeben
+# -a: alle Packages neue bauen
+# -o: Name für den Output ändern...
+RUN go build -tags netgo -v -o greetclient ./greet/client
+
+# Stage 2: Alpine Container bauen...
+FROM alpine:latest
+# ...das Verzeichnis steht zumindest im PATH (...was aber nicht zwingend ist)
+WORKDIR /usr/local/bin
+# aus dem Builder-Container nach WORKDIR kopieren
+COPY --from=builder /gomod/greetclient .
+ENTRYPOINT ["./greetclient"]
